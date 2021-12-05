@@ -47,6 +47,12 @@ class GUI(Ui_MainGUI):
         self.result.set_image(img)
         self.display()
 
+    # value
+    ###########################################
+    def get_alpha(self):
+        num = self.Alpha.value()
+        interval = self.Alpha.pageStep()
+        return num / interval
 
         
 class Image():
@@ -66,9 +72,6 @@ class Image():
         bytesPerline = c * w
         Img = QImage(self.image.data, w, h, bytesPerline, QImage.Format_RGB888).rgbSwapped()
         return Img
-
-    def set_boundingBox(self,rect):
-        self.boundingBox.set(rect)
     
     def reset(self):
         self.boundingBox.set(0,0,0,0)
@@ -80,10 +83,28 @@ class Image():
         p2 = (int(self.boundingBox.x1),int(self.boundingBox.y1))
         cv2.rectangle(self.image,p1,p2,color,thickness=2)
     
+    def set_boundingBox_image(self,img):
+        x0,y0,x1,y1 = self.boundingBox.get_range()
+        Img = copy.deepcopy(self.ori_image)
+        Img[y0:y1,x0:x1] = img[0:y1,0:x1]
+        return Img
+    
     def cut_boundingBox(self):
         x0,y0,x1,y1 = self.boundingBox.get_range()
-        Img = self.ori_image[y0:y1,x0:x1]
-        return Img
+        Reslut_Img = self.ori_image[y0:y1,x0:x1]
+        return Reslut_Img
+
+    def alpha_blending_boundingBox(self,alpha,gamma = 0):
+        image = self.cut_boundingBox()
+        if len(image) == 0:
+            print("There is no bounding box for blending")
+            return
+        gray_image = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+        gray_image = cv2.cvtColor(gray_image,cv2.COLOR_GRAY2BGR)
+        Blending_Img = cv2.addWeighted(image,alpha,gray_image,1 - alpha,gamma)
+        Reslut_Img = self.set_boundingBox_image(Blending_Img)
+        return Reslut_Img
+
 
     def save(self,path):
         cv2.imwrite(path,self.image)

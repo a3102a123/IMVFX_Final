@@ -13,6 +13,7 @@ python -m PyQt5.uic.pyuic -o UI/MainGUI.py UI/MainGUI.ui
 ### [pyqt document](https://doc.qt.io/)
 ### pyqt + opencv [ref](https://shengyu7697.github.io/python-opencv-show-image-pyqt/)
 ### override function at instance level [ref](https://stackoverflow.com/questions/394770/override-a-method-at-instance-level)
+### OpenCV document [ref](https://docs.opencv.org/4.x/index.html)
 
 ## 也許可用的 Model
 ### object detection

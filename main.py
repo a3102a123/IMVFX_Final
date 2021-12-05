@@ -9,6 +9,7 @@ import types
 ###########################################
 # GUI instance
 GUI = GUI()
+video = cv2.VideoCapture("video/sample.mp4")
 image_dir = os.path.join(".", "image")
 result_dir = os.path.join(".","result")
 
@@ -18,16 +19,37 @@ def im_show(window_name,img):
     cv2.imshow(window_name, img)
     cv2.waitKey(0)
 
+def get_video_frame(frame_idx,video):
+    # the number of frame in video
+    length = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+    # cv2.CAP_PROP_POS_MSEC , 0-based index of the millisecond to be decoded/captured next.
+    # cv2.CAP_PROP_POS_FRAMES : 0-based index of the frame to be decoded/captured next.
+    video.set(cv2.CAP_PROP_POS_FRAMES,frame_idx)
+    # ret is the return value (bool)
+    ret, frame = video.read()
+    return frame
 # button function
 ###########################################
 def cut_button_fun():
-    print("Cut out the image of boundiong box as result")
+    save_path = os.path.join(result_dir,"cut_result.jpg")
+    print("Cut out the image of boundiong box as result saved in : \n",save_path)
     Img = GUI.frame.cut_boundingBox()
+    if len(Img) == 0:
+            print("There is no bounding box for blending")
+            return
     GUI.set_result(Img)
-    GUI.result.save(os.path.join(result_dir,"cut_result.jpg"))
+    GUI.result.save(save_path)
+
+def alpha_blending_fun():
+    # simple alpha blending of gray image in the are of bounding box
+    alpha = GUI.get_alpha()
+    GUI.Alpha_text.setPlainText(str(alpha))
+    Img = GUI.frame.alpha_blending_boundingBox(alpha)
+    GUI.set_result(Img)
 
 def bind_buttton_function():
     GUI.cutButton.clicked.connect(cut_button_fun)
+    GUI.Alpha.valueChanged.connect(alpha_blending_fun)
 # mouse trigger function
 ###########################################
     # draw rectagle on image1
