@@ -15,6 +15,14 @@ python -m PyQt5.uic.pyuic -o UI/MainGUI.py UI/MainGUI.ui
 ### override function at instance level [ref](https://stackoverflow.com/questions/394770/override-a-method-at-instance-level)
 ### OpenCV document [ref](https://docs.opencv.org/4.x/index.html)
 
+## Model
+### inpating [github](https://github.com/daa233/generative-inpainting-pytorch)
+
+- test command
+```
+python test_single.py --image examples/imagenet/imagenet_patches_ILSVRC2012_val_00008210_input.png --mask examples/center_mask_256.png --output examples/output.png
+```
+
 ## 也許可用的 Model
 ### object detection
 1. Detectron2 [ref](https://yanwei-liu.medium.com/mask-r-cnn-with-detectron2-20c8f67b7f48)
