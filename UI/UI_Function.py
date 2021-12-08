@@ -101,8 +101,10 @@ class Image():
     def set_boundingBox_image(self,img):
         h,w,c = img.shape
         x0,y0,x1,y1 = self.boundingBox.get_range()
+        width = min(w,x1 - x0)
+        height = min(h,y1 - y0)
         Img = copy.deepcopy(self.ori_image)
-        Img[y0:y1,x0:x1] = img[0:y1 - y0,0:x1 - x0]
+        Img[y0:y0 + height,x0:x0 + width] = img[0:height,0:width]
         self.set_image(Img)
         return Img
     
