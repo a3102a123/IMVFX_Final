@@ -2,6 +2,8 @@
 image/*
 result/*
 video/*
+mask/*
+!.gitkeep
 !image/sample.png
 !video/sample.mp4
 
