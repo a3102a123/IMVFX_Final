@@ -16,11 +16,11 @@ python -m PyQt5.uic.pyuic -o UI/MainGUI.py UI/MainGUI.ui
 ### OpenCV document [ref](https://docs.opencv.org/4.x/index.html)
 
 ## Model
-### inpating [github](https://github.com/daa233/generative-inpainting-pytorch)
+### inpating [github](https://github.com/JiahuiYu/generative_inpainting)
 
-- test command
+- test command (run under model folder)
 ```
-python test_single.py --image examples/imagenet/imagenet_patches_ILSVRC2012_val_00008210_input.png --mask examples/center_mask_256.png --output examples/output.png
+python test.py --image examples/places2/case1_input.png --mask examples/places2/case1_mask.png --output examples/places2/case1_output.png --checkpoint_dir model_logs/release_places2_256
 ```
 
 ## 也許可用的 Model
