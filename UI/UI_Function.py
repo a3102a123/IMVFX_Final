@@ -159,7 +159,7 @@ class Image():
         cv2.imwrite(path,self.image)
 
     # return the resized Image object
-    def get_resize_image(self,width,height):
+    def get_resize_Image(self,width,height):
         x0,y0,x1,y1 = self.boundingBox.get()
         h,w,c = self.ori_image.shape
         w_scale = width / w
@@ -170,6 +170,12 @@ class Image():
         img_obj.set_image(img)
         img_obj.boundingBox.set(x0*w_scale,y0*h_scale,x1*w_scale,y1*h_scale)
         return img_obj
+
+    # return the copy instance of Image
+    def get_Image(self):
+        new_Image = Image()
+        new_Image.set_image(self)
+        return new_Image
 
 
 # rectangle contain 4 element to represent the range of rectangle

@@ -12,7 +12,7 @@ import types
 GUI = GUI()
 video = cv2.VideoCapture("video/sample.mp4")
 # path
-inpainting_model_path = "./model/generative-inpainting-pytorch"
+inpainting_model_path = "./model/generative_inpainting"
 pwd = os.getcwd()
 image_dir ="image/"
 mask_dir = "mask/"
@@ -52,10 +52,11 @@ def inpainting(img_obj,cut_img_name = "cut.png",mask_img_name = "mask.png",outpu
     output_path = os.path.join(root_path,result_dir,output_img_name)
     print(image_path , mask_path, output_path)
     os.chdir(inpainting_model_path)
-    os.system("python test_single.py"\
+    os.system("python test.py"\
         " --image " + image_path + \
         " --mask " + mask_path + \
-        " --output " + output_path)
+        " --output " + output_path + \
+        " --checkpoint_dir model_logs/release_places2_256")
     os.chdir(pwd)
     Img = cv2.imread(output_path)
     return Img
@@ -64,12 +65,10 @@ def inpainting(img_obj,cut_img_name = "cut.png",mask_img_name = "mask.png",outpu
 ###########################################
 def test_fun():
     save_path = os.path.join(result_dir,"edit_result.jpg")
-    result_img_obj = GUI.frame.get_resize_image(256,256)
+    result_img_obj = GUI.frame.get_Image()
     result = inpainting(result_img_obj)
+    im_show("inpainting result",result)
     result_img_obj.set_image(result)
-    # resize back to origin image size
-    h,w,c = GUI.frame.image.shape
-    result_img_obj = result_img_obj.get_resize_image(w,h)
     result = result_img_obj.get_boundingBox_image()
     GUI.result.set_image(GUI.frame)
     GUI.result.set_boundingBox_image(result)
