@@ -1,9 +1,25 @@
-from PyQt5 import QtWidgets
-from UI.UI_Function import GUI, Image, Rect
+# model
+###########################################
 import sys
 import os
+# path
+pwd = os.getcwd()
+image_dir ="image/"
+mask_dir = "mask/"
+result_dir = "result/"
+yoloV4_model_path = os.path.join(".","model","yolov4_deepsort")
+inpainting_model_path = os.path.join(".","model","generative_inpainting")
+# prepare model's module path
+sys.path.append(yoloV4_model_path)
+print(yoloV4_model_path)
+
+from PyQt5 import QtWidgets
+from UI.UI_Function import GUI, Image, Rect
 import cv2
 import types
+os.chdir(yoloV4_model_path)
+import model.yolov4_deepsort.object_tracker_single as yolo
+os.chdir(pwd)
 
 
 # global variable
@@ -11,12 +27,8 @@ import types
 # GUI instance
 GUI = GUI()
 video = cv2.VideoCapture("video/sample.mp4")
-# path
-inpainting_model_path = "./model/generative_inpainting"
-pwd = os.getcwd()
-image_dir ="image/"
-mask_dir = "mask/"
-result_dir = "result/"
+# model
+tracker = yolo.init_tracker()
 
 # cv2 function
 ###########################################
