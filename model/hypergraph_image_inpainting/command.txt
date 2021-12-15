@@ -1,0 +1,6 @@
+#test.py
+python test.py --dataset places2 --pretrained_model_dir pretrained_models/places2_random --checkpoint_prefix places2_256x256_random_mask --random_mask 0 --test_dir ../test/img
+
+
+#single_test.py 只測單一張圖 用random model
+python single_test.py --image image/002.png --mask mask/center_mask.png --output output/002_random.png --pretrained_model_dir pretrained_models/places2_random --checkpoint_prefix places2_256x256_random_mask

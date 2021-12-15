@@ -18,7 +18,7 @@ from UI.UI_Function import GUI, Image, Rect
 import cv2
 import types
 os.chdir(yoloV4_model_path)
-import model.yolov4_deepsort.object_tracker_single as yolo
+#import model.yolov4_deepsort.object_tracker_single as yolo
 os.chdir(pwd)
 
 
@@ -28,7 +28,7 @@ os.chdir(pwd)
 GUI = GUI()
 video = cv2.VideoCapture("video/sample.mp4")
 # model
-tracker = yolo.init_tracker()
+#tracker = yolo.init_tracker()
 
 # cv2 function
 ###########################################
