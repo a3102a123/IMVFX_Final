@@ -71,6 +71,7 @@ def object_track(root_path,tracker,frame,rect_list,id = -1,is_show=False):
     
     # initialize deep sort
     model_filename = os.path.join(root_path,'model_data/mars-small128.pb')
+    print("load deep sort model : ",model_filename)
     encoder = gdet.create_box_encoder(model_filename, batch_size=1)
     
 
@@ -83,7 +84,8 @@ def object_track(root_path,tracker,frame,rect_list,id = -1,is_show=False):
     video_path = FLAGS.video
 
     # load standard tensorflow saved model
-    weights_path = os.path.join(root_path,'./checkpoints/yolov4-416')
+    weights_path = os.path.join(root_path,'checkpoints/yolov4-416')
+    print("load YOLO model weights : ",weights_path)
     saved_model_loaded = tf.saved_model.load(weights_path, tags=[tag_constants.SERVING])
     infer = saved_model_loaded.signatures['serving_default']
 
@@ -247,6 +249,9 @@ def object_track(root_path,tracker,frame,rect_list,id = -1,is_show=False):
 
 if __name__ == '__main__':
     try:
+        image_path = '../../image/sample.png'
+        img = cv2.imread(image_path)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         video_path = './data/video/test.mp4'
         tracker = init_tracker()
         rect_list = [865, 386, 989, 590]
@@ -256,8 +261,9 @@ if __name__ == '__main__':
         except:
             vid = cv2.VideoCapture(video_path)
         
-        for i in range(3):
+        for i in range(1):
             return_value, frame = vid.read()
+            # cv2.imwrite("../../image/test.png",frame)
             if return_value:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 id , rect = object_track('./',tracker,frame,rect_list,id=6,is_show=True)

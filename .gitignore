@@ -5,6 +5,7 @@ video/*
 mask/*
 !.gitkeep
 !image/sample.png
+!image/test.png
 !video/sample.mp4
 
 # default python .gitignore

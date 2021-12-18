@@ -18,20 +18,23 @@ inpainting_model_path = os.path.join(".","model","generative_inpainting")
 
 ### YOLOv4 + deep sort
 # change to model folder & add this absolute path of model for import
-os.chdir(yoloV4_model_path)
-sys.path.append(os.getcwd())
-import object_tracker_single as yolo
-# after import go back to origin running position
-os.chdir(pwd)
-
+try :
+    os.chdir(yoloV4_model_path)
+    sys.path.append(os.getcwd())
+    import object_tracker_single as yolo
+    # model
+    tracker = yolo.init_tracker()
+except:
+    print("Import yolo fail! (wrong environment)")
+finally:
+    # after import go back to origin running position
+    os.chdir(pwd)
 
 # global variable
 ###########################################
 # GUI instance
 GUI = GUI()
 video = cv2.VideoCapture("video/sample.mp4")
-# model
-tracker = yolo.init_tracker()
 
 # cv2 function
 ###########################################
@@ -78,7 +81,14 @@ def inpainting(img_obj,cut_img_name = "cut.png",mask_img_name = "mask.png",outpu
 
 # button function
 ###########################################
-def test_fun():
+def track_fun():
+    os.chdir(yoloV4_model_path)
+    img = cv2.cvtColor(GUI.frame.ori_image, cv2.COLOR_BGR2RGB)
+    id , rect = yolo.object_track("./",tracker,img,GUI.frame.boundingBox.get_list(),is_show = True)
+    print(id , " : " , rect)
+    os.chdir(pwd)
+
+def inpainting_fun():
     save_path = os.path.join(result_dir,"edit_result.jpg")
     result_img_obj = GUI.frame.get_Image()
     result = inpainting(result_img_obj)
@@ -90,6 +100,9 @@ def test_fun():
     GUI.result.save(save_path)
     GUI.result.draw_boundingBox((0,0,255))
     GUI.display()
+
+def test_fun():
+    track_fun()
 
 def cut_button_fun():
     save_path = os.path.join(result_dir,"cut_result.jpg")
@@ -154,6 +167,6 @@ def init():
 if __name__ == "__main__":
     # inpainting("1.png","center_mask_256.png")
     init()
-    img = cv2.imread('image/sample.png')
+    img = cv2.imread('image/test.png')
     GUI.set_frame(img)
     GUI.run_app()

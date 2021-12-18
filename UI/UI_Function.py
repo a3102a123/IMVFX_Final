@@ -217,6 +217,9 @@ class Rect():
     # return the p0 p1 (p0 maybe is the point on left-top or right-top )
     def get(self):
         return self.x0,self.y0,self.x1,self.y1
+    # return the list contain [p0,p1]
+    def get_list(self):
+        return [self.x0,self.y0,self.x1,self.y1]
     # return the bounding box range for cutting image
     def get_range(self):
         x0 = int(min(self.x0,self.x1))
