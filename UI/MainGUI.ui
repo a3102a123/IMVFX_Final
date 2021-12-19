@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1280</width>
-    <height>720</height>
+    <width>1000</width>
+    <height>1000</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,10 +17,10 @@
    <widget class="QLabel" name="ImageDisplayer">
     <property name="geometry">
      <rect>
-      <x>100</x>
-      <y>20</y>
-      <width>500</width>
-      <height>480</height>
+      <x>20</x>
+      <y>50</y>
+      <width>720</width>
+      <height>405</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -30,16 +30,16 @@
      <string/>
     </property>
     <property name="scaledContents">
-     <bool>false</bool>
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="QLabel" name="ImageDisplayer_2">
     <property name="geometry">
      <rect>
-      <x>700</x>
-      <y>20</y>
-      <width>500</width>
-      <height>480</height>
+      <x>20</x>
+      <y>520</y>
+      <width>720</width>
+      <height>405</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -48,12 +48,15 @@
     <property name="text">
      <string/>
     </property>
+    <property name="scaledContents">
+     <bool>true</bool>
+    </property>
    </widget>
    <widget class="QPushButton" name="cutButton">
     <property name="geometry">
      <rect>
-      <x>920</x>
-      <y>530</y>
+      <x>820</x>
+      <y>110</y>
       <width>101</width>
       <height>31</height>
      </rect>
@@ -65,8 +68,8 @@
    <widget class="QGroupBox" name="AlphaBlending">
     <property name="geometry">
      <rect>
-      <x>850</x>
-      <y>580</y>
+      <x>760</x>
+      <y>280</y>
       <width>221</width>
       <height>71</height>
      </rect>
@@ -122,8 +125,8 @@ p, li { white-space: pre-wrap; }
    <widget class="QPushButton" name="TestButton">
     <property name="geometry">
      <rect>
-      <x>1050</x>
-      <y>530</y>
+      <x>820</x>
+      <y>190</y>
       <width>101</width>
       <height>31</height>
      </rect>
@@ -138,7 +141,7 @@ p, li { white-space: pre-wrap; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1280</width>
+     <width>1000</width>
      <height>21</height>
     </rect>
    </property>

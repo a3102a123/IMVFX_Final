@@ -33,9 +33,7 @@ class GUI(Ui_MainGUI):
     def display_ImageDisplayer(self,displayer,img_obj):
         if type(img_obj.image) == type(None):
             return
-        h, w, c = img_obj.image.shape
         Img = img_obj.QImage()
-        displayer.resize(w,h)
         displayer.setPixmap(QPixmap.fromImage(Img))
         displayer.show()
 
@@ -52,6 +50,13 @@ class GUI(Ui_MainGUI):
 
     # value
     ###########################################
+    def get_Displayer2Frame_ratio(self):
+        width = self.ImageDisplayer.frameGeometry().width()
+        height = self.ImageDisplayer.frameGeometry().height()
+        img_h , img_w , img_c = self.frame.image.shape
+        ratio_w = img_w / width
+        ratio_h = img_h / height
+        return ratio_w , ratio_h
     def get_alpha(self):
         num = self.Alpha.value()
         interval = self.Alpha.pageStep()

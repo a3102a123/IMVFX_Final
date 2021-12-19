@@ -130,8 +130,9 @@ def bind_buttton_function():
 ###########################################
     # draw rectagle on image1
 def img_window_mousePressEvent(self,event):
+    ratio_w, ratio_h = GUI.get_Displayer2Frame_ratio()
     GUI.draing_flag = True
-    GUI.frame.boundingBox.set_p0(event.x(),event.y())
+    GUI.frame.boundingBox.set_p0(event.x() * ratio_w,event.y() * ratio_h)
 
 def img_window_mouseReleaseEvent(self,event):
     GUI.draing_flag = False
@@ -139,7 +140,8 @@ def img_window_mouseReleaseEvent(self,event):
 
 def img_window_mouseMoveEvent(self,event):
     if GUI.draing_flag:
-        GUI.frame.boundingBox.set_p1(event.x(),event.y())
+        ratio_w, ratio_h = GUI.get_Displayer2Frame_ratio()
+        GUI.frame.boundingBox.set_p1(event.x() * ratio_w,event.y() * ratio_h)
         GUI.frame.clear_drawing()
         GUI.frame.draw_boundingBox((0,0,255))
         GUI.display()
