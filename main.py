@@ -52,6 +52,16 @@ def get_video_frame(frame_idx,video):
     ret, frame = video.read()
     return frame
 
+# check image size to fit computer capability
+def checkImagesize(img_obj,width,height):
+    scale = 1
+    h,w,c = GUI.frame.ori_image.shape
+    while w > width or h > height:
+        h /= 2
+        w /= 2
+        scale *= 2
+    return scale
+
 # model
 ###########################################
 # parameter input the image file name
@@ -91,9 +101,15 @@ def track_fun():
 def inpainting_fun():
     save_path = os.path.join(result_dir,"edit_result.jpg")
     result_img_obj = GUI.frame.get_Image()
+    h,w,c = result_img_obj.image.shape
+    scale = checkImagesize(result_img_obj,1280,720)
+    if scale > 1:
+        result_img_obj = GUI.frame.get_resize_Image(int(w/scale) , int(h/scale))
     result = inpainting(result_img_obj)
     im_show("inpainting result",result)
     result_img_obj.set_image(result)
+    if scale > 1 :
+        result_img_obj = result_img_obj.get_resize_Image(w,h)
     result = result_img_obj.get_boundingBox_image()
     GUI.result.set_image(GUI.frame)
     GUI.result.set_boundingBox_image(result)
@@ -102,6 +118,12 @@ def inpainting_fun():
     GUI.display()
 
 def test_fun():
+    video_path = os.path.join("model","yolov4_deepsort","data/video/test.mp4")
+    # begin video capture
+    try:
+        vid = cv2.VideoCapture(int(video_path))
+    except:
+        vid = cv2.VideoCapture(video_path)
     track_fun()
 
 def cut_button_fun():
@@ -124,7 +146,8 @@ def alpha_blending_fun():
 
 def bind_buttton_function():
     GUI.TestButton.clicked.connect(test_fun)
-    GUI.cutButton.clicked.connect(cut_button_fun)
+    GUI.CutButton.clicked.connect(cut_button_fun)
+    GUI.InpaintingButton.clicked.connect(inpainting_fun)
     GUI.Alpha.valueChanged.connect(alpha_blending_fun)
 # mouse trigger function
 ###########################################

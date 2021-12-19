@@ -29,9 +29,9 @@ class Ui_MainGUI(object):
         self.ImageDisplayer_2.setText("")
         self.ImageDisplayer_2.setScaledContents(True)
         self.ImageDisplayer_2.setObjectName("ImageDisplayer_2")
-        self.cutButton = QtWidgets.QPushButton(self.centralwidget)
-        self.cutButton.setGeometry(QtCore.QRect(820, 110, 101, 31))
-        self.cutButton.setObjectName("cutButton")
+        self.CutButton = QtWidgets.QPushButton(self.centralwidget)
+        self.CutButton.setGeometry(QtCore.QRect(820, 110, 101, 31))
+        self.CutButton.setObjectName("CutButton")
         self.AlphaBlending = QtWidgets.QGroupBox(self.centralwidget)
         self.AlphaBlending.setGeometry(QtCore.QRect(760, 280, 221, 71))
         font = QtGui.QFont()
@@ -53,6 +53,9 @@ class Ui_MainGUI(object):
         self.TestButton = QtWidgets.QPushButton(self.centralwidget)
         self.TestButton.setGeometry(QtCore.QRect(820, 190, 101, 31))
         self.TestButton.setObjectName("TestButton")
+        self.InpaintingButton = QtWidgets.QPushButton(self.centralwidget)
+        self.InpaintingButton.setGeometry(QtCore.QRect(820, 150, 101, 31))
+        self.InpaintingButton.setObjectName("InpaintingButton")
         MainGUI.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainGUI)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1000, 21))
@@ -68,7 +71,7 @@ class Ui_MainGUI(object):
     def retranslateUi(self, MainGUI):
         _translate = QtCore.QCoreApplication.translate
         MainGUI.setWindowTitle(_translate("MainGUI", "MainWindow"))
-        self.cutButton.setText(_translate("MainGUI", "Cut"))
+        self.CutButton.setText(_translate("MainGUI", "Cut"))
         self.AlphaBlending.setTitle(_translate("MainGUI", "Alpha value (blending)"))
         self.Alpha_text.setHtml(_translate("MainGUI", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
@@ -76,3 +79,4 @@ class Ui_MainGUI(object):
 "</style></head><body style=\" font-family:\'PMingLiU\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">0</p></body></html>"))
         self.TestButton.setText(_translate("MainGUI", "Test"))
+        self.InpaintingButton.setText(_translate("MainGUI", "Inpainting"))

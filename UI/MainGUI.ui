@@ -52,7 +52,7 @@
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QPushButton" name="cutButton">
+   <widget class="QPushButton" name="CutButton">
     <property name="geometry">
      <rect>
       <x>820</x>
@@ -133,6 +133,19 @@ p, li { white-space: pre-wrap; }
     </property>
     <property name="text">
      <string>Test</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="InpaintingButton">
+    <property name="geometry">
+     <rect>
+      <x>820</x>
+      <y>150</y>
+      <width>101</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Inpainting</string>
     </property>
    </widget>
   </widget>
