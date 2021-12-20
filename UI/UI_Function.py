@@ -1,5 +1,6 @@
 
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import QThread
 from PyQt5.QtGui import QImage, QPixmap
 from UI.MainGUI import Ui_MainGUI
 import sys
@@ -8,6 +9,21 @@ import copy
 import cv2
 import numpy as np
 import math
+
+class MyThread(QThread):
+    def __init__(self,target,root_path,tracker,frame,rect_list,id = -1,is_show=False):
+        super().__init__()
+        self.target = target
+        self.root_path = root_path
+        self.tracker = tracker
+        self.frame = frame
+        self.rect_list = rect_list
+        self.id = id
+        self.is_show = is_show
+
+    def run(self):
+        if self.target:
+            self.ID , self.rect_list = self.target(self.root_path,self.tracker,self.frame,self.rect_list,self.id,self.is_show)
 
 class GUI(Ui_MainGUI):
     def __init__(self):
@@ -29,13 +45,14 @@ class GUI(Ui_MainGUI):
     def display(self):
         self.display_ImageDisplayer(self.ImageDisplayer , self.frame)
         self.display_ImageDisplayer(self.ImageDisplayer_2 , self.result)
+        self.app.processEvents()
 
     def display_ImageDisplayer(self,displayer,img_obj):
         if type(img_obj.image) == type(None):
             return
         Img = img_obj.QImage()
         displayer.setPixmap(QPixmap.fromImage(Img))
-        displayer.show()
+        displayer.update()
 
     # setting
     ###########################################
@@ -224,7 +241,11 @@ class Rect():
         return self.x0,self.y0,self.x1,self.y1
     # return the list contain [p0,p1]
     def get_list(self):
-        return [self.x0,self.y0,self.x1,self.y1]
+        x0 = int(min(self.x0,self.x1))
+        y0 = int(min(self.y0,self.y1))
+        x1 = int(max(self.x0,self.x1))
+        y1 = int(max(self.y0,self.y1))
+        return [x0,y0,x1,y1]
     # return the bounding box range for cutting image
     def get_range(self):
         x0 = int(min(self.x0,self.x1))

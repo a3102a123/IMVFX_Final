@@ -1,9 +1,9 @@
 import sys
 import os
-from PyQt5 import QtWidgets
-from UI.UI_Function import GUI, Image, Rect
+from UI.UI_Function import GUI, Image, MyThread, Rect
 import cv2
 import types
+import time
 
 # model
 ###########################################
@@ -35,6 +35,9 @@ finally:
 # GUI instance
 GUI = GUI()
 video = cv2.VideoCapture("video/sample.mp4")
+# video setting
+sample_msec = 100
+sample_frame = 10
 
 # cv2 function
 ###########################################
@@ -91,25 +94,28 @@ def inpainting(img_obj,cut_img_name = "cut.png",mask_img_name = "mask.png",outpu
 
 # button function
 ###########################################
-def track_fun():
-    os.chdir(yoloV4_model_path)
-    img = cv2.cvtColor(GUI.frame.ori_image, cv2.COLOR_BGR2RGB)
-    id , rect = yolo.object_track("./",tracker,img,GUI.frame.boundingBox.get_list(),is_show = True)
-    print(id , " : " , rect)
-    os.chdir(pwd)
 
-def inpainting_fun():
-    save_path = os.path.join(result_dir,"edit_result.jpg")
+def inpainting_fun(idx):
+    # the file name of used image
+    cut_img_name = "cut_{}.png".format(idx)
+    mask_img_name = "mask_{}.png".format(idx)
+    output_img_name = "inpainting_{}.png".format(idx)
+    save_path = os.path.join(result_dir,"edit_result_{}.png".format(idx))
+    
+    # check Image object to prevent too big size of image to crash the computer
     result_img_obj = GUI.frame.get_Image()
     h,w,c = result_img_obj.image.shape
     scale = checkImagesize(result_img_obj,1280,720)
     if scale > 1:
         result_img_obj = GUI.frame.get_resize_Image(int(w/scale) , int(h/scale))
-    result = inpainting(result_img_obj)
-    im_show("inpainting result",result)
+    
+    # get inpainting result & resize back to original image size
+    result = inpainting(result_img_obj,cut_img_name,mask_img_name,output_img_name)
     result_img_obj.set_image(result)
     if scale > 1 :
         result_img_obj = result_img_obj.get_resize_Image(w,h)
+    
+    # combine the inpainting result & origin image
     result = result_img_obj.get_boundingBox_image()
     GUI.result.set_image(GUI.frame)
     GUI.result.set_boundingBox_image(result)
@@ -117,17 +123,46 @@ def inpainting_fun():
     GUI.result.draw_boundingBox((0,0,255))
     GUI.display()
 
+def track_fun(ID,next_frame):
+    # update frame
+    GUI.set_frame(next_frame)
+    os.chdir(yoloV4_model_path)
+    img = cv2.cvtColor(GUI.frame.ori_image, cv2.COLOR_BGR2RGB)
+    
+    # tracking
+    id , rect = yolo.object_track("./",tracker,img,GUI.frame.boundingBox.get_list(),id=ID,is_show = False)
+    print("Track Result : ",id," / ",rect)
+    
+    # update frame bounding box
+    GUI.frame.boundingBox.set(rect[0],rect[1],rect[2],rect[3])
+    print(ID," / ",GUI.frame.boundingBox.get())
+    os.chdir(pwd)
+    return id
+
 def test_fun():
+    ID = -1
     video_path = os.path.join("model","yolov4_deepsort","data/video/test.mp4")
     # begin video capture
     try:
         vid = cv2.VideoCapture(int(video_path))
     except:
         vid = cv2.VideoCapture(video_path)
-    track_fun()
+    for i in range(2):
+        if(i != 0):
+            vid.set(cv2.CAP_PROP_POS_MSEC,i * sample_msec)
+            return_value, frame = vid.read()
+            if(not return_value):
+                break
+            print("Loop num : ",i)
+            ID = track_fun(ID,frame)
+            print("Frame state : ",ID," / ",GUI.frame.boundingBox.get())
+            GUI.frame.draw_boundingBox((0,0,255))
+            GUI.display()
+        inpainting_fun(i)
+    print("Finsh video inpainting")
 
 def cut_button_fun():
-    save_path = os.path.join(result_dir,"cut_result.jpg")
+    save_path = os.path.join(result_dir,"cut_result.png")
     print("Cut out the image of boundiong box as result saved in : \n",save_path)
     Img = GUI.frame.cut_boundingBox()
     if len(Img) == 0:
