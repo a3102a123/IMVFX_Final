@@ -205,13 +205,14 @@ def object_track(root_path,tracker,frame,rect_list,id = -1,is_show=False):
         
         min_dist = sys.maxsize
         if not is_find:
-            center = np.zeros(2)
-            center = np.array((int(rect_list[2] + rect_list[0]) / 2 , int(rect_list[3] + rect_list[1]) / 2),dtype=float)
+            rect_arr = np.array(rect_list)
+            rect_arr = rect_arr.reshape(2,2)
             for track in tracker.tracks:
                 bbox = track.to_tlbr()
-                track_center = np.zeros(2)
-                track_center = np.array((int(bbox[2] + bbox[0]) / 2 , int(bbox[3] + bbox[1]) / 2),dtype=float)
-                dist = np.linalg.norm(track_center - center)
+                bbox_arr = bbox.reshape(2,2)
+                dist = 0
+                for j in range(2):
+                    dist += np.linalg.norm(bbox_arr[j] - rect_arr[j])
                 if dist < min_dist:
                     min_dist = dist
                     class_name = track.get_class()
