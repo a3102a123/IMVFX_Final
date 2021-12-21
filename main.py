@@ -1,6 +1,6 @@
 import sys
 import os
-from UI.UI_Function import GUI, Image, MyThread, Rect
+from UI.UI_Function import GUI, Image, Rect
 import cv2
 import types
 import time
@@ -95,7 +95,7 @@ def inpainting(img_obj,cut_img_name = "cut.png",mask_img_name = "mask.png",outpu
 # button function
 ###########################################
 
-def inpainting_fun(idx):
+def inpainting_fun(idx = 0):
     # the file name of used image
     cut_img_name = "cut_{}.png".format(idx)
     mask_img_name = "mask_{}.png".format(idx)
@@ -129,8 +129,10 @@ def track_fun(ID,next_frame):
     os.chdir(yoloV4_model_path)
     img = cv2.cvtColor(GUI.frame.ori_image, cv2.COLOR_BGR2RGB)
     
-    # tracking
-    id , rect = yolo.object_track("./",tracker,img,GUI.frame.boundingBox.get_list(),id=ID,is_show = False)
+    # tracking , the return list contain all bbox overlap with the target object
+    id , rect_list = yolo.object_track("./",tracker,img,GUI.frame.boundingBox.get_list(),id=ID,is_show = False)
+    # the first bbox is target object
+    rect = rect_list[0]
     print("Track Result : ",id," / ",rect)
     
     # update frame bounding box
@@ -147,8 +149,8 @@ def test_fun():
         vid = cv2.VideoCapture(int(video_path))
     except:
         vid = cv2.VideoCapture(video_path)
-    for i in range(2):
-        if(i != 0):
+    for i in range(1,3,1):
+        if(i != 1):
             vid.set(cv2.CAP_PROP_POS_MSEC,i * sample_msec)
             return_value, frame = vid.read()
             if(not return_value):

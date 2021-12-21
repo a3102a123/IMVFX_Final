@@ -54,6 +54,16 @@ class flag():
         self.info = True
         self.count = False
 
+def checkOverlap(rect1,rect2):
+    # If one rectangle is on left side of other
+    if (rect1[0] >= rect2[2] or rect2[0] >= rect1[2]):
+        return False 
+    # If one rectangle is above other 
+    if (rect1[3] <= rect2[1] or rect2[3] <= rect1[1]):
+        return False
+    print("Target overlap with ",rect2)
+    return True
+
 def init_tracker():
     # Definition of the parameters
     max_cosine_distance = 0.4
@@ -190,6 +200,7 @@ def object_track(root_path,tracker,frame,rect_list,id = -1,is_show=False):
         tracker.update(detections)
         is_find = False
         result_rect_list = []
+        result_rect_list_arr = []
         result_id = -1
         # update tracks
         for track in tracker.tracks:
@@ -200,7 +211,7 @@ def object_track(root_path,tracker,frame,rect_list,id = -1,is_show=False):
                 result_id = int(track.track_id)
                 bbox = track.to_tlbr()
                 class_name = track.get_class()
-                result_rect_list = bbox
+                track_target = bbox
                 break
         
         min_dist = sys.maxsize
@@ -216,15 +227,26 @@ def object_track(root_path,tracker,frame,rect_list,id = -1,is_show=False):
                 if dist < min_dist:
                     min_dist = dist
                     class_name = track.get_class()
-                    result_rect_list = bbox
+                    track_target = bbox
                     result_id = int(track.track_id)
-
+        
+        # check the overlap of bounding box
+        result_rect_list_arr.append(track_target)
+        for track in tracker.tracks:
+            if result_id == track.track_id:
+                continue
+            bbox = track.to_tlbr()
+            if(checkOverlap(track_target,bbox)):
+                result_rect_list_arr.append(bbox)
         # draw bbox on screen
-        color = colors[int(result_id) % len(colors)]
-        color = [i * 255 for i in color]
-        cv2.rectangle(frame, (int(result_rect_list[0]), int(result_rect_list[1])), (int(result_rect_list[2]), int(result_rect_list[3])), color, 2)
-        cv2.rectangle(frame, (int(result_rect_list[0]), int(result_rect_list[1]-30)), (int(result_rect_list[0])+(len(class_name)+len(str(result_id)))*17, int(result_rect_list[1])), color, -1)
-        cv2.putText(frame, class_name + "-" + str(result_id),(int(result_rect_list[0]), int(result_rect_list[1]-10)),0, 0.75, (255,255,255),2)
+        for result_rect_list in result_rect_list_arr:
+            color = colors[int(result_id) % len(colors)]
+            color = [i * 255 for i in color]
+            cv2.rectangle(frame, (int(result_rect_list[0]), int(result_rect_list[1])), (int(result_rect_list[2]), int(result_rect_list[3])), color, 2)
+            cv2.circle(frame,(int(result_rect_list[0]), int(result_rect_list[1])),radius=5,color=(0,255,0),thickness=-1)
+            cv2.circle(frame,(int(result_rect_list[2]), int(result_rect_list[3])),radius=5,color=(255,255,0),thickness=-1)
+            cv2.rectangle(frame, (int(result_rect_list[0]), int(result_rect_list[1]-30)), (int(result_rect_list[0])+(len(class_name)+len(str(result_id)))*17, int(result_rect_list[1])), color, -1)
+            cv2.putText(frame, class_name + "-" + str(result_id),(int(result_rect_list[0]), int(result_rect_list[1]-10)),0, 0.75, (255,255,255),2)
         
         # if enable info flag then print details about each track
         if FLAGS.info:
@@ -246,7 +268,7 @@ def object_track(root_path,tracker,frame,rect_list,id = -1,is_show=False):
         cv2.waitKey(0)
     cv2.destroyAllWindows()
     session.close()
-    return result_id,result_rect_list
+    return result_id,result_rect_list_arr
 
 if __name__ == '__main__':
     try:
@@ -267,8 +289,8 @@ if __name__ == '__main__':
             # cv2.imwrite("../../image/test.png",frame)
             if return_value:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                id , rect = object_track('./',tracker,frame,rect_list,id=6,is_show=True)
-                print(id," : ",rect)
+                id , rect_list = object_track('./',tracker,frame,rect_list,id=6,is_show=True)
+                print(id," : ",rect_list)
             else:
                 print('Video has ended or failed, try a different video format!')
                 break

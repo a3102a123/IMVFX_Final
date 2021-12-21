@@ -10,21 +10,6 @@ import cv2
 import numpy as np
 import math
 
-class MyThread(QThread):
-    def __init__(self,target,root_path,tracker,frame,rect_list,id = -1,is_show=False):
-        super().__init__()
-        self.target = target
-        self.root_path = root_path
-        self.tracker = tracker
-        self.frame = frame
-        self.rect_list = rect_list
-        self.id = id
-        self.is_show = is_show
-
-    def run(self):
-        if self.target:
-            self.ID , self.rect_list = self.target(self.root_path,self.tracker,self.frame,self.rect_list,self.id,self.is_show)
-
 class GUI(Ui_MainGUI):
     def __init__(self):
         self.app = QtWidgets.QApplication(sys.argv)
@@ -86,8 +71,11 @@ class Image():
         self.ori_image = None
         # image will be used to draw or modify
         self.image = None
-        # the bouding box range drew on image
+        # the bounding box range drew on image
         self.boundingBox = Rect(0,0,0,0)
+        # the first elemnet is the refence of self.boundingbox, 
+        # other element is object bounding box overlap with target
+        self.boundingBox_list = [self.boundingBox]
         if(image_path != None):
             img = cv2.imread(image_path)
             self.set_image(img)
@@ -97,6 +85,7 @@ class Image():
             self.ori_image = copy.deepcopy(img.ori_image)
             self.image = copy.deepcopy(img.ori_image)
             self.boundingBox = copy.deepcopy(img.boundingBox)
+            self.boundingBox_list = copy.deepcopy(img.boundingBox_list)
         else:
             self.ori_image = copy.deepcopy(img)
             self.image = copy.deepcopy(img)
@@ -110,30 +99,44 @@ class Image():
     def reset(self):
         self.boundingBox.set(0,0,0,0)
         self.image = copy.deepcopy(self.ori_image)
+        self.boundingBox_list.clear()
+        self.boundingBox_list.append(self.boundingBox)
 
     def clear_drawing(self):
         self.image = copy.deepcopy(self.ori_image)
 
     def draw_boundingBox(self,color):
-        p1 = (int(self.boundingBox.x0),int(self.boundingBox.y0))
-        p2 = (int(self.boundingBox.x1),int(self.boundingBox.y1))
-        cv2.rectangle(self.image,p1,p2,color,thickness=2)
+        for bbox in self.boundingBox_list:
+            p1 = (int(bbox.x0),int(bbox.y0))
+            p2 = (int(bbox.x1),int(bbox.y1))
+            cv2.rectangle(self.image,p1,p2,color,thickness=2)
     
-    # change the content in bounding box to img(the size of img is as same as bounding area)
+    # return the bigger bounding box combined with all bounding box in list
+    def get_combined_boundingBox(self):
+        x0,y0,x1,y1 = sys.maxsize,sys.maxsize,-1,-1
+        for bbox in self.boundingBox_list:
+            b_x0,b_y0,b_x1,b_y1 = self.boundingBox.get_range()
+            x0,y0,x1,y1 = min(b_x0,x0),min(b_y0,y0),max(b_x1,x1),max(b_y1,y1)
+        return x0,y0,x1,y1
+
+    # change the content in bounding box to img
+    # (the size of img is the bigger bounding box combined with all bounding box in list)
     def set_boundingBox_image(self,img):
         h,w,c = img.shape
-        x0,y0,x1,y1 = self.boundingBox.get_range()
-        width = min(w,x1 - x0)
-        height = min(h,y1 - y0)
         Img = copy.deepcopy(self.ori_image)
-        Img[y0:y0 + height,x0:x0 + width] = img[0:height,0:width]
-        self.set_image(Img)
+        for bbox in self.boundingBox_list:
+            x0,y0,x1,y1 = bbox.get_range()
+            width = x1 - x0
+            height = y1 - y0
+            Img[y0:y0 + height,x0:x0 + width] = img[0:height,0:width]
+            self.set_image(Img)
         return Img
     
-    # return the image in bounding box
+    # combining all bounding box to a big one and return the image of it
     def get_boundingBox_image(self):
-        x0,y0,x1,y1 = self.boundingBox.get_range()
-        Reslut_Img = copy.deepcopy(self.ori_image[y0:y1,x0:x1])
+        x0,y0,x1,y1 = self.get_combined_boundingBox()
+        # append a little of bounding box to prevent resize rounding problem
+        Reslut_Img = copy.deepcopy(self.ori_image[y0:(y1 + 5),x0:(x1 + 5)])
         return Reslut_Img
 
     # apply the alpha blenging with gray scale image in bounding box
@@ -150,17 +153,19 @@ class Image():
 
     # return the image which the bounding area is cutted out 
     def cut_boundingBox(self):
-        x0,y0,x1,y1 = self.boundingBox.get_range()
         Reslut_Img = copy.deepcopy(self.ori_image)
-        Reslut_Img[y0:y1,x0:x1] = (255,255,255)
+        for bbox in self.boundingBox_list:
+            x0,y0,x1,y1 = bbox.get_range()
+            Reslut_Img[y0:y1,x0:x1] = (255,255,255)
         return Reslut_Img
 
     # return the mask of bounding box in original image scale
     def masking_boundingBox(self):
         h,w,c = self.ori_image.shape
-        x0,y0,x1,y1 = self.boundingBox.get_range()
         mask = np.zeros((h,w), np.uint8)
-        mask[y0:y1,x0:x1] = 255
+        for bbox in self.boundingBox_list:
+            x0,y0,x1,y1 = bbox.get_range()
+            mask[y0:y1,x0:x1] = 255
         return mask
 
     # save the cut out image
@@ -182,7 +187,6 @@ class Image():
 
     # return the resized Image object
     def get_resize_Image(self,width,height):
-        x0,y0,x1,y1 = self.boundingBox.get()
         h,w,c = self.ori_image.shape
         w_scale = width / w
         h_scale = height / h
@@ -190,7 +194,9 @@ class Image():
         img = cv2.resize(img,(width,height),interpolation=cv2.INTER_CUBIC)
         img_obj = Image()
         img_obj.set_image(img)
-        img_obj.boundingBox.set(x0*w_scale,y0*h_scale,x1*w_scale,y1*h_scale)
+        for i,bbox in enumerate(img_obj.boundingBox_list):
+            x0,y0,x1,y1 = self.boundingBox_list[i].get_range()
+            bbox.set(x0*w_scale,y0*h_scale,x1*w_scale,y1*h_scale)
         return img_obj
 
     # return the copy instance of Image
