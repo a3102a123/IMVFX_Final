@@ -108,7 +108,6 @@ def inpainting_fun(idx = 0):
     scale = checkImagesize(result_img_obj,1280,720)
     if scale > 1:
         result_img_obj = GUI.frame.get_resize_Image(int(w/scale) , int(h/scale))
-    
     # get inpainting result & resize back to original image size
     result = inpainting(result_img_obj,cut_img_name,mask_img_name,output_img_name)
     result_img_obj.set_image(result)
@@ -130,14 +129,11 @@ def track_fun(ID,next_frame):
     img = cv2.cvtColor(GUI.frame.ori_image, cv2.COLOR_BGR2RGB)
     
     # tracking , the return list contain all bbox overlap with the target object
-    id , rect_list = yolo.object_track("./",tracker,img,GUI.frame.boundingBox.get_list(),id=ID,is_show = False)
-    # the first bbox is target object
-    rect = rect_list[0]
-    print("Track Result : ",id," / ",rect)
+    id , bbox_list = yolo.object_track("./",tracker,img,GUI.frame.boundingBox.get_list(),id=ID,is_show = False)
+    print("Track Result : ",id," / ",bbox_list)
     
     # update frame bounding box
-    GUI.frame.boundingBox.set(rect[0],rect[1],rect[2],rect[3])
-    print(ID," / ",GUI.frame.boundingBox.get())
+    GUI.frame.set_boundingBox_list(bbox_list,6)
     os.chdir(pwd)
     return id
 
@@ -149,7 +145,7 @@ def test_fun():
         vid = cv2.VideoCapture(int(video_path))
     except:
         vid = cv2.VideoCapture(video_path)
-    for i in range(1,3,1):
+    for i in range(1,20,1):
         if(i != 1):
             vid.set(cv2.CAP_PROP_POS_MSEC,i * sample_msec)
             return_value, frame = vid.read()
@@ -160,6 +156,9 @@ def test_fun():
             print("Frame state : ",ID," / ",GUI.frame.boundingBox.get())
             GUI.frame.draw_boundingBox((0,0,255))
             GUI.display()
+        # for debugging tracking skip the first frame
+        # else : 
+        #     continue
         inpainting_fun(i)
     print("Finsh video inpainting")
 

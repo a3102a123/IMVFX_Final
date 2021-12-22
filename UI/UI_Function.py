@@ -90,6 +90,24 @@ class Image():
             self.ori_image = copy.deepcopy(img)
             self.image = copy.deepcopy(img)
     
+    # append bounding box of other object to prevent remaining some edge influecing result
+    def set_boundingBox_list(self,list,append_pixel = 0):
+        # initial boundingBox list 
+        self.boundingBox_list.clear()
+        self.boundingBox_list.append(self.boundingBox)
+        for i,bbox in enumerate(list):
+            # assume the first element of input is the target 
+            if i == 0:
+                self.boundingBox.set(bbox[0] - append_pixel,bbox[1] - append_pixel,bbox[2] + append_pixel,bbox[3] + append_pixel)
+            else:
+                temp = Rect(bbox[0] - append_pixel,bbox[1] - append_pixel,bbox[2] + append_pixel,bbox[3] + append_pixel)
+                self.boundingBox_list.append(temp)
+
+    def print_boundingBox_list(self):
+        print("The length of bounding box : ",len(self.boundingBox_list))
+        for bbox in self.boundingBox_list:
+            bbox.print()
+
     def QImage(self):
         h, w, c = self.image.shape
         bytesPerline = c * w
@@ -115,20 +133,23 @@ class Image():
     def get_combined_boundingBox(self):
         x0,y0,x1,y1 = sys.maxsize,sys.maxsize,-1,-1
         for bbox in self.boundingBox_list:
-            b_x0,b_y0,b_x1,b_y1 = self.boundingBox.get_range()
+            b_x0,b_y0,b_x1,b_y1 = bbox.get_range()
             x0,y0,x1,y1 = min(b_x0,x0),min(b_y0,y0),max(b_x1,x1),max(b_y1,y1)
         return x0,y0,x1,y1
 
     # change the content in bounding box to img
     # (the size of img is the bigger bounding box combined with all bounding box in list)
     def set_boundingBox_image(self,img):
-        h,w,c = img.shape
         Img = copy.deepcopy(self.ori_image)
+        # find the bounding image beginning position in origin image
+        img_x0,img_y0,img_x1,img_y1 = self.get_combined_boundingBox()
         for bbox in self.boundingBox_list:
             x0,y0,x1,y1 = bbox.get_range()
+            begin_w = x0 - img_x0
+            begin_h = y0 - img_y0
             width = x1 - x0
             height = y1 - y0
-            Img[y0:y0 + height,x0:x0 + width] = img[0:height,0:width]
+            Img[y0:y0 + height,x0:x0 + width] = img[begin_h:begin_h + height,begin_w:begin_w + width]
             self.set_image(Img)
         return Img
     
@@ -194,9 +215,13 @@ class Image():
         img = cv2.resize(img,(width,height),interpolation=cv2.INTER_CUBIC)
         img_obj = Image()
         img_obj.set_image(img)
-        for i,bbox in enumerate(img_obj.boundingBox_list):
-            x0,y0,x1,y1 = self.boundingBox_list[i].get_range()
-            bbox.set(x0*w_scale,y0*h_scale,x1*w_scale,y1*h_scale)
+        for i,bbox in enumerate(self.boundingBox_list):
+            x0,y0,x1,y1 = bbox.get_range()
+            if i == 0:
+                img_obj.boundingBox.set(x0*w_scale,y0*h_scale,x1*w_scale,y1*h_scale)
+            else:
+                temp = Rect(x0*w_scale,y0*h_scale,x1*w_scale,y1*h_scale)
+                img_obj.boundingBox_list.append(temp)
         return img_obj
 
     # return the copy instance of Image

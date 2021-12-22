@@ -61,7 +61,13 @@ def checkOverlap(rect1,rect2):
     # If one rectangle is above other 
     if (rect1[3] <= rect2[1] or rect2[3] <= rect1[1]):
         return False
-    print("Target overlap with ",rect2)
+    # check overlap ratio if < half of rect2 return false
+    area = (rect2[2] - rect2[0]) * (rect2[3] - rect2[1])
+    dx = min(rect1[2],rect2[2]) - max(rect1[0],rect2[0])
+    dy = min(rect1[3],rect2[3]) - max(rect1[1],rect2[1])
+    area_overlap = dx*dy
+    if area_overlap < (area / 2):
+        return False
     return True
 
 def init_tracker():
