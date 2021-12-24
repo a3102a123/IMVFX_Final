@@ -17,6 +17,7 @@ import skimage.io
 import matplotlib
 import matplotlib.pyplot as plt
 import argparse
+import cv2
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../")
@@ -87,7 +88,12 @@ results = model.detect([image], verbose=1)
 
 # Visualize results
 r = results[0]
-visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'], 
-                            class_names, r['scores'])
+#visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'], class_names, r['scores'])
 
-plt.imsave(OUTPUT_DIR, r['masks'][:,:,0], cmap = plt.cm.gray)
+rshape = r['masks'].shape
+mask = np.zeros(rshape[:2])
+
+for i in range(rshape[2]):
+    mask[:,:] = np.where(r['masks'][:,:,i] == 1, 255, mask[:,:])
+
+plt.imsave(OUTPUT_DIR, mask, cmap = plt.cm.gray)
