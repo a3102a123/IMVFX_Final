@@ -30,6 +30,8 @@ python test.py --image examples/places2/case1_input.png --mask examples/places2/
 python object_tracker.py --video ./data/video/test.mp4 --output ./outputs/temp.avi --model yolov4
 ```
 
+### mask RCNN [github](https://github.com/matterport/Mask_RCNN)
+
 ## 也許可用的 Model
 ### object detection
 1. Detectron2 [ref](https://yanwei-liu.medium.com/mask-r-cnn-with-detectron2-20c8f67b7f48)
