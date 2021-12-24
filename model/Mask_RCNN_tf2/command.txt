@@ -1,0 +1,1 @@
+python test.py --image .\images\street.png --output .\generate_mask\street_mask.png --checkpoint_dir .\mask_rcnn_coco.h5

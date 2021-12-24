@@ -1,5 +1,5 @@
 #python==3.6
-
+git+https://github.com/JiahuiYu/neuralgym
 pyyaml
 opencv-python
-tensorflow==1.7.0
+#tensorflow==1.7.0
