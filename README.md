@@ -23,10 +23,14 @@ python -m PyQt5.uic.pyuic -o UI/MainGUI.py UI/MainGUI.ui
 python test.py --image examples/places2/case1_input.png --mask examples/places2/case1_mask.png --output examples/places2/case1_output.png --checkpoint_dir model_logs/release_places2_256
 ```
 
+### object tracking 
+1. yolo + deep sort [ref](https://peaceful0907.medium.com/%E5%88%9D%E6%8E%A2%E7%89%A9%E4%BB%B6%E8%BF%BD%E8%B9%A4-multiple-object-tracking-mot-4f1b42e959f9) [github](https://github.com/theAIGuysCode/yolov4-deepsort)
+- test command (run under model folder)
+```
+python object_tracker.py --video ./data/video/test.mp4 --output ./outputs/temp.avi --model yolov4
+```
+
 ## 也許可用的 Model
 ### object detection
 1. Detectron2 [ref](https://yanwei-liu.medium.com/mask-r-cnn-with-detectron2-20c8f67b7f48)
 2. yolo
-
-### object tracking
-1. yolo + deep sort [ref](https://peaceful0907.medium.com/%E5%88%9D%E6%8E%A2%E7%89%A9%E4%BB%B6%E8%BF%BD%E8%B9%A4-multiple-object-tracking-mot-4f1b42e959f9)
