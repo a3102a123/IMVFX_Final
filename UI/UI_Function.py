@@ -195,6 +195,15 @@ class Image():
         cv2.imwrite(path,Img)
         print("Creat cutted image saved in : ",path)
 
+    # save the image cutted by mask
+    def save_mask_cut(self,path,mask):
+        white = self.get_white_img()
+        white = cv2.bitwise_and(white,white,mask=mask)
+        inv_mask = cv2.bitwise_not(mask)
+        Img = cv2.bitwise_and(self.ori_image,self.ori_image,mask = inv_mask)
+        Img = cv2.add(Img,white)
+        cv2.imwrite(path,Img)
+        print("Creat cutted image with mask saved in : ",path)
 
     # save the bounding area mask
     def save_mask(self,path):
@@ -205,6 +214,16 @@ class Image():
     # save the drew iamge result 
     def save(self,path):
         cv2.imwrite(path,self.image)
+
+    # save original image
+    def save_ori(self,path):
+        cv2.imwrite(path,self.ori_image)
+    
+    # get the whole white image
+    def get_white_img(self):
+        h,w,c = self.ori_image.shape
+        Img = np.ones((h,w,c),np.uint8) * 255
+        return Img
 
     # return the resized Image object
     def get_resize_Image(self,width,height):

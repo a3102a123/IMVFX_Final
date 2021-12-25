@@ -2,6 +2,7 @@ import sys
 import os
 from UI.UI_Function import GUI, Image, Rect
 import cv2
+import numpy as np
 import types
 import time
 
@@ -15,7 +16,7 @@ mask_dir = "mask/"
 result_dir = "result/"
 yoloV4_model_path = os.path.join(".","model","yolov4_deepsort")
 inpainting_model_path = os.path.join(".","model","generative_inpainting")
-
+mask_RCNN_path = os.path.join(".","model","Mask_RCNN_tf2")
 ### YOLOv4 + deep sort
 # change to model folder & add this absolute path of model for import
 try :
@@ -67,16 +68,49 @@ def checkImagesize(img_obj,width,height):
 
 # model
 ###########################################
+# return the mask calc by mask RCNN
+def mask_RCNN(img_name = "image.png",output_mask_name = "RCNN_mask.png"):
+    root_path = pwd
+    image_path = os.path.join(root_path,image_dir,img_name)
+    output_path = os.path.join(root_path,mask_dir,output_mask_name)
+    os.chdir(mask_RCNN_path)
+    os.system("python test.py"\
+        " --image " + image_path + \
+        " --output " + output_path + \
+        " --checkpoint_dir .\mask_rcnn_coco.h5")
+    os.chdir(pwd)
+    Img = cv2.imread(output_path,cv2.IMREAD_GRAYSCALE)
+    return Img
 # parameter input the image file name
-def prepare_inpainting_img(img_obj,cut_img_name = "cut.png",mask_img_name = "mask.png"):
-    save_path = os.path.join(image_dir,cut_img_name)
-    img_obj.save_cut(save_path)
-    save_path = os.path.join(mask_dir,mask_img_name)
-    img_obj.save_mask(save_path)
+# use_RCNN means whether using RCNN mask or bounding box
+def prepare_inpainting_img(img_obj,img_name = "image.png",cut_img_name = "cut.png",mask_img_name = "mask.png",use_RCNN = True):
+    if use_RCNN:
+        # save full frame image for RCNN input
+        save_path = os.path.join(image_dir,img_name)
+        img_obj.save_ori(save_path)
+        # get the part of mask in bounding box range
+        RCNN_mask = mask_RCNN(img_name,mask_img_name)
+        bbox_mask = img_obj.masking_boundingBox()
+        mask = cv2.bitwise_and(RCNN_mask,RCNN_mask,mask=bbox_mask)
+        im_show("mask",mask)
+        # dilate the mask to fit the person
+        kernel = np.ones((3,3), np.uint8)
+        mask = cv2.dilate(mask, kernel, iterations = 10)
+        # save result mask and cutted image by this mask
+        save_path = os.path.join(image_dir,cut_img_name)
+        img_obj.save_mask_cut(save_path,mask)
+        save_path = os.path.join(mask_dir,mask_img_name)
+        cv2.imwrite(save_path,mask)
+    else:
+        save_path = os.path.join(image_dir,cut_img_name)
+        img_obj.save_cut(save_path)
+        save_path = os.path.join(mask_dir,mask_img_name)
+        img_obj.save_mask(save_path)
+
 
 # return the Image object of 256*256 inpainting image
-def inpainting(img_obj,cut_img_name = "cut.png",mask_img_name = "mask.png",output_img_name = "inpainting_result.png"):
-    prepare_inpainting_img(img_obj,cut_img_name,mask_img_name)
+def inpainting(img_obj,img_name = "image.png",cut_img_name = "cut.png",mask_img_name = "mask.png",output_img_name = "inpainting_result.png"):
+    prepare_inpainting_img(img_obj,img_name,cut_img_name,mask_img_name)
     root_path = pwd
     image_path = os.path.join(root_path,image_dir,cut_img_name)
     mask_path = os.path.join(root_path,mask_dir,mask_img_name)
@@ -97,6 +131,7 @@ def inpainting(img_obj,cut_img_name = "cut.png",mask_img_name = "mask.png",outpu
 
 def inpainting_fun(idx = 0):
     # the file name of used image
+    image_name = "image_{}.png".format(idx)
     cut_img_name = "cut_{}.png".format(idx)
     mask_img_name = "mask_{}.png".format(idx)
     output_img_name = "inpainting_{}.png".format(idx)
@@ -109,7 +144,7 @@ def inpainting_fun(idx = 0):
     if scale > 1:
         result_img_obj = GUI.frame.get_resize_Image(int(w/scale) , int(h/scale))
     # get inpainting result & resize back to original image size
-    result = inpainting(result_img_obj,cut_img_name,mask_img_name,output_img_name)
+    result = inpainting(result_img_obj,image_name,cut_img_name,mask_img_name,output_img_name)
     result_img_obj.set_image(result)
     if scale > 1 :
         result_img_obj = result_img_obj.get_resize_Image(w,h)
@@ -133,19 +168,19 @@ def track_fun(ID,next_frame):
     print("Track Result : ",id," / ",bbox_list)
     
     # update frame bounding box
-    GUI.frame.set_boundingBox_list(bbox_list,6)
+    GUI.frame.set_boundingBox_list(bbox_list,0)
     os.chdir(pwd)
     return id
 
-def test_fun():
+def video_inpainting():
     ID = -1
-    video_path = os.path.join("model","yolov4_deepsort","data/video/test.mp4")
+    video_path = os.path.join("video","test.mp4")
     # begin video capture
     try:
         vid = cv2.VideoCapture(int(video_path))
     except:
         vid = cv2.VideoCapture(video_path)
-    for i in range(1,20,1):
+    for i in range(1,5,1):
         if(i != 1):
             vid.set(cv2.CAP_PROP_POS_MSEC,i * sample_msec)
             return_value, frame = vid.read()
@@ -161,6 +196,10 @@ def test_fun():
         #     continue
         inpainting_fun(i)
     print("Finsh video inpainting")
+
+def test_fun():
+    video_inpainting()
+    # prepare_inpainting_img(GUI.frame)
 
 def cut_button_fun():
     save_path = os.path.join(result_dir,"cut_result.png")
