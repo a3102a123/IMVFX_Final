@@ -4,6 +4,7 @@ from UI.UI_Function import GUI, Image, Rect
 import cv2
 import numpy as np
 import types
+import atexit
 import time
 
 # model
@@ -14,9 +15,12 @@ pwd = os.getcwd()
 image_dir ="image/"
 mask_dir = "mask/"
 result_dir = "result/"
+video_dir = "video/"
 yoloV4_model_path = os.path.join(".","model","yolov4_deepsort")
 inpainting_model_path = os.path.join(".","model","generative_inpainting")
 mask_RCNN_path = os.path.join(".","model","Mask_RCNN_tf2")
+video_path = os.path.join(video_dir,"test.mp4")
+output_video_path = os.path.join(video_dir,"result.avi")
 ### YOLOv4 + deep sort
 # change to model folder & add this absolute path of model for import
 try :
@@ -35,8 +39,20 @@ finally:
 ###########################################
 # GUI instance
 GUI = GUI()
-video = cv2.VideoCapture("video/sample.mp4")
+# video capture to read video
+try:
+    vid = cv2.VideoCapture(int(video_path))
+except:
+    vid = cv2.VideoCapture(video_path)
+# output video writer
+width = int(vid.get(cv2.CAP_PROP_FRAME_WIDTH))
+height = int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
+fps = int(vid.get(cv2.CAP_PROP_FPS))
+codec = cv2.VideoWriter_fourcc(*'XVID')
+out_vid = cv2.VideoWriter(output_video_path, codec, fps, (width, height))
+
 # video setting
+stop_msec = 2000
 sample_msec = 100
 sample_frame = 10
 
@@ -55,6 +71,9 @@ def get_video_frame(frame_idx,video):
     # ret is the return value (bool)
     ret, frame = video.read()
     return frame
+
+def print_video_frame_num():
+    print(int(vid.get(cv2.CAP_PROP_FRAME_COUNT)))
 
 # check image size to fit computer capability
 def checkImagesize(img_obj,width,height):
@@ -92,7 +111,6 @@ def prepare_inpainting_img(img_obj,img_name = "image.png",cut_img_name = "cut.pn
         RCNN_mask = mask_RCNN(img_name,mask_img_name)
         bbox_mask = img_obj.masking_boundingBox()
         mask = cv2.bitwise_and(RCNN_mask,RCNN_mask,mask=bbox_mask)
-        im_show("mask",mask)
         # dilate the mask to fit the person
         kernel = np.ones((3,3), np.uint8)
         mask = cv2.dilate(mask, kernel, iterations = 10)
@@ -174,19 +192,19 @@ def track_fun(ID,next_frame):
 
 def video_inpainting():
     ID = -1
-    video_path = os.path.join("video","test.mp4")
-    # begin video capture
-    try:
-        vid = cv2.VideoCapture(int(video_path))
-    except:
-        vid = cv2.VideoCapture(video_path)
-    for i in range(1,5,1):
-        if(i != 1):
-            vid.set(cv2.CAP_PROP_POS_MSEC,i * sample_msec)
+    global stop_msec
+    current_msec = 0
+    i = 0
+    # for i < 2:
+    while(current_msec <= stop_msec):
+        if(i != 0):
+            print("Video progress rate : ",current_msec," / ",stop_msec)
+            vid.set(cv2.CAP_PROP_POS_FRAMES,i * sample_frame)
             return_value, frame = vid.read()
+            print("Read frame number : ",vid.get(cv2.CAP_PROP_POS_FRAMES))
             if(not return_value):
                 break
-            print("Loop num : ",i)
+            print("Loop num : ",i+1)
             ID = track_fun(ID,frame)
             print("Frame state : ",ID," / ",GUI.frame.boundingBox.get())
             GUI.frame.draw_boundingBox((0,0,255))
@@ -194,11 +212,17 @@ def video_inpainting():
         # for debugging tracking skip the first frame
         # else : 
         #     continue
-        inpainting_fun(i)
+        inpainting_fun(i+1)
+        # write result into output video
+        out_vid.write(GUI.result.ori_image)
+        i += 1
+        current_msec = vid.get(cv2.CAP_PROP_POS_MSEC)
     print("Finsh video inpainting")
 
 def test_fun():
-    video_inpainting()
+    print("test function")
+    print(GUI.get_sampleFrequency())
+    # video_inpainting()
     # prepare_inpainting_img(GUI.frame)
 
 def cut_button_fun():
@@ -219,11 +243,19 @@ def alpha_blending_fun():
     Img = GUI.result.alpha_blending_boundingBox(alpha)
     GUI.display()
 
+def videoSampleFrequency_fun():
+    global sample_frame
+    freq = GUI.get_sampleFrequency()
+    sample_frame = freq
+    GUI.VideoSampleFrequency_text.setPlainText(str(freq))
+
 def bind_buttton_function():
     GUI.TestButton.clicked.connect(test_fun)
+    GUI.RCNN_VideoInpaintingButton.clicked.connect(video_inpainting)
     GUI.CutButton.clicked.connect(cut_button_fun)
-    GUI.InpaintingButton.clicked.connect(inpainting_fun)
+    GUI.RCNN_InpaintingButton.clicked.connect(inpainting_fun)
     GUI.Alpha.valueChanged.connect(alpha_blending_fun)
+    GUI.VideoSampleFrequency.valueChanged.connect(videoSampleFrequency_fun)
 # mouse trigger function
 ###########################################
     # draw rectagle on image1
@@ -259,14 +291,24 @@ def check_dir():
     os.makedirs(image_dir,exist_ok=True)
     os.makedirs(result_dir,exist_ok=True)
 
+# release video & memory when program end
+def closeEvent():
+    print("Close GUI & release video!")
+    vid.release()
+    out_vid.release()
+
 def init():
     check_dir()
     bind_img_window_func(GUI.ImageDisplayer)
     bind_buttton_function()
+    videoSampleFrequency_fun()
+    atexit.register(closeEvent)
     
 if __name__ == "__main__":
     # inpainting("1.png","center_mask_256.png")
     init()
-    img = cv2.imread('image/test.png')
+    return_value, img = vid.read()
+    print_video_frame_num()
+    # img = cv2.imread('image/test.png')
     GUI.set_frame(img)
     GUI.run_app()

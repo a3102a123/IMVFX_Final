@@ -63,6 +63,9 @@ class GUI(Ui_MainGUI):
         num = self.Alpha.value()
         interval = self.Alpha.pageStep()
         return num / interval
+    def get_sampleFrequency(self):
+        num = self.VideoSampleFrequency.value()
+        return num
 
         
 class Image():
