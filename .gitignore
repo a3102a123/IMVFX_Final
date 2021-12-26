@@ -3,6 +3,8 @@ image/*
 result/*
 video/*
 mask/*
+utils/*
+!utils/*.py
 !.gitkeep
 !image/sample.png
 !image/test.png

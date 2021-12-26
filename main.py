@@ -21,6 +21,7 @@ inpainting_model_path = os.path.join(".","model","generative_inpainting")
 mask_RCNN_path = os.path.join(".","model","Mask_RCNN_tf2")
 video_path = os.path.join(video_dir,"test.mp4")
 output_video_path = os.path.join(video_dir,"result.avi")
+output_video_low_path = os.path.join(video_dir,"result_low.avi")
 ### YOLOv4 + deep sort
 # change to model folder & add this absolute path of model for import
 try :
@@ -51,9 +52,10 @@ height = int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
 fps = int(vid.get(cv2.CAP_PROP_FPS))
 codec = cv2.VideoWriter_fourcc(*'XVID')
 out_vid = cv2.VideoWriter(output_video_path, codec, fps, (width, height))
+out_vid_low = None
 
 # video setting
-begin_frame = 10
+begin_frame = 0
 stop_msec = 2000
 sample_msec = 100
 sample_frame = 10
@@ -153,6 +155,7 @@ def inpainting(img_obj,img_name = "image.png",cut_img_name = "cut.png",mask_img_
 ###########################################
 
 def inpainting_fun(idx = 0):
+    global out_vid_low
     # the file name of used image
     image_name = "image_{}.png".format(idx)
     cut_img_name = "cut_{}.png".format(idx)
@@ -164,6 +167,7 @@ def inpainting_fun(idx = 0):
     result_img_obj = GUI.frame.get_Image()
     h,w,c = result_img_obj.image.shape
     scale = checkImagesize(result_img_obj,1280,720)
+    # resize image to lower resolution
     if scale > 1:
         result_img_obj = GUI.frame.get_resize_Image(int(w/scale) , int(h/scale))
     # get inpainting result & resize back to original image size
@@ -172,13 +176,20 @@ def inpainting_fun(idx = 0):
     if scale > 1 :
         result_img_obj = result_img_obj.get_resize_Image(w,h)
     
+    # set up low resolution video writer
+    if scale > 1 and out_vid_low == None:
+        r_h,r_w,r_c = result.shape
+        out_vid_low = cv2.VideoWriter(output_video_low_path, codec, fps, (r_w , r_h))
+
     # combine the inpainting result & origin image
-    result = result_img_obj.get_boundingBox_image()
+    edit_result = result_img_obj.get_boundingBox_image()
     GUI.result.set_image(GUI.frame)
-    GUI.result.set_boundingBox_image(result)
+    GUI.result.set_boundingBox_image(edit_result)
     GUI.result.save(save_path)
     GUI.result.draw_boundingBox((0,0,255))
     GUI.display()
+    # return origin inpainting result
+    return result
 
 def track_fun(ID,next_frame):
     # update frame
@@ -197,6 +208,7 @@ def track_fun(ID,next_frame):
 
 def video_inpainting():
     ID = -1
+    global out_vid_low
     global stop_msec
     global begin_frame
     current_msec = 0
@@ -218,9 +230,12 @@ def video_inpainting():
             print("Frame state : ",ID," / ",GUI.frame.boundingBox.get())
             GUI.frame.draw_boundingBox((0,0,255))
             GUI.display()
-        inpainting_fun(begin_frame + i)
-        # write result into output video
+        result = inpainting_fun(begin_frame + i)
+        # write edit result into output video
         out_vid.write(GUI.result.ori_image)
+        # write original result into low resolution video 
+        if(out_vid_low != None):
+            out_vid_low.write(result)
         i += 1
         current_msec = vid.get(cv2.CAP_PROP_POS_MSEC)
     print("Finsh video inpainting")
@@ -322,8 +337,9 @@ def check_dir():
 # release video & memory when program end
 def closeEvent():
     print("Close GUI & release video!")
-    vid.release()
     out_vid.release()
+    out_vid_low.release()
+    vid.release()
 
 def init():
     check_dir()
