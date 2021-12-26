@@ -5,7 +5,7 @@ video/*
 mask/*
 utils/*
 !utils/*.py
-rcnn2/*
+result_image/*
 !.gitkeep
 !image/sample.png
 !image/test.png
