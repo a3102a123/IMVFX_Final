@@ -3,6 +3,7 @@ image/*
 result/*
 video/*
 mask/*
+rcnn2/*
 !.gitkeep
 !image/sample.png
 !image/test.png

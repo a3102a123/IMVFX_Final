@@ -19,7 +19,7 @@ video_dir = "video/"
 yoloV4_model_path = os.path.join(".","model","yolov4_deepsort")
 inpainting_model_path = os.path.join(".","model","generative_inpainting")
 mask_RCNN_path = os.path.join(".","model","Mask_RCNN_tf2")
-video_path = os.path.join(video_dir,"test.mp4")
+video_path = os.path.join(video_dir,"test2.mp4")
 output_video_path = os.path.join(video_dir,"result.avi")
 ### YOLOv4 + deep sort
 # change to model folder & add this absolute path of model for import
@@ -53,7 +53,7 @@ codec = cv2.VideoWriter_fourcc(*'XVID')
 out_vid = cv2.VideoWriter(output_video_path, codec, fps, (width, height))
 
 # video setting
-begin_frame = 10
+begin_frame = 129
 stop_msec = 2000
 sample_msec = 100
 sample_frame = 10
@@ -204,7 +204,7 @@ def video_inpainting():
     # for i < 2:
     while(current_msec <= stop_msec):
         # for debugging stop the iteration after few frame
-        if (i >= 3 ):
+        if (i >= 5 ):
             break
         if(i != 0):
             print("Video progress rate : ",current_msec," / ",stop_msec)
