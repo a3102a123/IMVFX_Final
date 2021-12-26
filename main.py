@@ -39,6 +39,7 @@ finally:
 ###########################################
 # GUI instance
 GUI = GUI()
+use_RCNN = True
 # video capture to read video
 try:
     vid = cv2.VideoCapture(int(video_path))
@@ -52,6 +53,7 @@ codec = cv2.VideoWriter_fourcc(*'XVID')
 out_vid = cv2.VideoWriter(output_video_path, codec, fps, (width, height))
 
 # video setting
+begin_frame = 10
 stop_msec = 2000
 sample_msec = 100
 sample_frame = 10
@@ -75,6 +77,8 @@ def get_video_frame(frame_idx,video):
 def print_video_frame_num():
     print(int(vid.get(cv2.CAP_PROP_FRAME_COUNT)))
 
+def print_video_current_frame():
+    print("Read frame number : ",vid.get(cv2.CAP_PROP_POS_FRAMES))
 # check image size to fit computer capability
 def checkImagesize(img_obj,width,height):
     scale = 1
@@ -101,8 +105,9 @@ def mask_RCNN(img_name = "image.png",output_mask_name = "RCNN_mask.png"):
     Img = cv2.imread(output_path,cv2.IMREAD_GRAYSCALE)
     return Img
 # parameter input the image file name
-# use_RCNN means whether using RCNN mask or bounding box
-def prepare_inpainting_img(img_obj,img_name = "image.png",cut_img_name = "cut.png",mask_img_name = "mask.png",use_RCNN = True):
+# global variable use_RCNN means whether using RCNN mask or bounding box (default is true)
+def prepare_inpainting_img(img_obj,img_name = "image.png",cut_img_name = "cut.png",mask_img_name = "mask.png"):
+    global use_RCNN
     if use_RCNN:
         # save full frame image for RCNN input
         save_path = os.path.join(image_dir,img_name)
@@ -193,31 +198,52 @@ def track_fun(ID,next_frame):
 def video_inpainting():
     ID = -1
     global stop_msec
+    global begin_frame
     current_msec = 0
     i = 0
     # for i < 2:
     while(current_msec <= stop_msec):
+        # for debugging stop the iteration after few frame
+        if (i >= 3 ):
+            break
         if(i != 0):
             print("Video progress rate : ",current_msec," / ",stop_msec)
-            vid.set(cv2.CAP_PROP_POS_FRAMES,i * sample_frame)
+            vid.set(cv2.CAP_PROP_POS_FRAMES,begin_frame + i * sample_frame)
+            print_video_current_frame()
             return_value, frame = vid.read()
-            print("Read frame number : ",vid.get(cv2.CAP_PROP_POS_FRAMES))
             if(not return_value):
                 break
-            print("Loop num : ",i+1)
+            print("Loop num : ",i)
             ID = track_fun(ID,frame)
             print("Frame state : ",ID," / ",GUI.frame.boundingBox.get())
             GUI.frame.draw_boundingBox((0,0,255))
             GUI.display()
-        # for debugging tracking skip the first frame
-        # else : 
-        #     continue
-        inpainting_fun(i+1)
+        inpainting_fun(begin_frame + i)
         # write result into output video
         out_vid.write(GUI.result.ori_image)
         i += 1
         current_msec = vid.get(cv2.CAP_PROP_POS_MSEC)
     print("Finsh video inpainting")
+
+def RCNN_video_inpainting_fun():
+    global use_RCNN
+    use_RCNN = True
+    video_inpainting()
+
+def bbox_video_inpainting_fun():
+    global use_RCNN
+    use_RCNN = False
+    video_inpainting()
+
+def RCNN_inpainting_fun():
+    global use_RCNN
+    use_RCNN = True
+    inpainting_fun()
+
+def bbox_inpainting_fun():
+    global use_RCNN
+    use_RCNN = False
+    inpainting_fun()
 
 def test_fun():
     print("test function")
@@ -251,9 +277,11 @@ def videoSampleFrequency_fun():
 
 def bind_buttton_function():
     GUI.TestButton.clicked.connect(test_fun)
-    GUI.RCNN_VideoInpaintingButton.clicked.connect(video_inpainting)
     GUI.CutButton.clicked.connect(cut_button_fun)
-    GUI.RCNN_InpaintingButton.clicked.connect(inpainting_fun)
+    GUI.RCNN_VideoInpaintingButton.clicked.connect(RCNN_video_inpainting_fun)
+    GUI.RCNN_InpaintingButton.clicked.connect(RCNN_inpainting_fun)
+    GUI.VideoInpaintingButton.clicked.connect(bbox_video_inpainting_fun)
+    GUI.InpaintingButton.clicked.connect(bbox_inpainting_fun)
     GUI.Alpha.valueChanged.connect(alpha_blending_fun)
     GUI.VideoSampleFrequency.valueChanged.connect(videoSampleFrequency_fun)
 # mouse trigger function
@@ -303,12 +331,12 @@ def init():
     bind_buttton_function()
     videoSampleFrequency_fun()
     atexit.register(closeEvent)
+    vid.set(cv2.CAP_PROP_POS_FRAMES,begin_frame)
     
 if __name__ == "__main__":
     # inpainting("1.png","center_mask_256.png")
     init()
     return_value, img = vid.read()
-    print_video_frame_num()
     # img = cv2.imread('image/test.png')
     GUI.set_frame(img)
     GUI.run_app()
