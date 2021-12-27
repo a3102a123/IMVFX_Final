@@ -270,8 +270,8 @@ def video_inpainting():
     i = 0
     while(current_msec <= stop_msec):
         # for debugging stop the iteration after few frame
-        if (i >= 4 ):
-            break
+        # if (i >= 4 ):
+        #     break
         if(i != 0):
             print("Video progress rate : ",current_msec," / ",stop_msec)
             vid.set(cv2.CAP_PROP_POS_FRAMES,begin_frame + i * sample_frame)
