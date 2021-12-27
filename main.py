@@ -1,3 +1,4 @@
+from math import floor
 import sys
 import os
 from UI.UI_Function import GUI, Image, Rect
@@ -63,7 +64,11 @@ sample_frame = 10
 # cv2 function
 ###########################################
 def im_show(window_name,img):
-    cv2.imshow(window_name, img)
+    if(isinstance(img,list)):
+        for i,im in enumerate(img):
+            cv2.imshow(window_name + "_" + str(i), im)
+    else:
+        cv2.imshow(window_name, img)
     cv2.waitKey(0)
 
 def get_video_frame(frame_idx,video):
@@ -122,22 +127,55 @@ def prepare_inpainting_img(img_obj,img_name = "image.png",cut_img_name = "cut.pn
         # dilate once to concate target near by mask to single big mask
         kernel = np.ones((3,3), np.uint8)
         mask = cv2.dilate(mask, kernel, iterations = 1)
-        contours , hierarchy = cv2.findContours(mask,cv2.RETR_EXTERNAL ,cv2.CHAIN_APPROX_SIMPLE)
+        contours , hierarchy = cv2.findContours(mask,cv2.RETR_EXTERNAL ,cv2.CHAIN_APPROX_NONE)
         print("num of contours : ",len(contours))
         # find the biggest mask
         max_area = 0
-        bigest_contr_idx = -1
+        biggest_contr_idx = -1
         for i,contr in enumerate(contours):
             area = cv2.contourArea(contr)
             print("contour area {}: ".format(i),area)
             if area > max_area:
                 max_area = area
-                bigest_contr_idx = i
+                biggest_contr_idx = i
+        x0,y0,x1,y1 = img_obj.get_combined_boundingBox()
+        bbox_h_offset = floor((y1 - y0) / 3)
+        print("offset : ",bbox_h_offset)
+        append_pixel = int((x1 - x0) / 10)
+
         # remove other contour only remain target contour
-        contours.pop(bigest_contr_idx)
-        mask = cv2.drawContours(mask,contours,-1,0,-1)
-        # dilate the mask to fit the person
-        mask = cv2.dilate(mask, kernel, iterations = 10)
+        for i,contr in enumerate(contours):
+            if i != biggest_contr_idx:
+                # fill contours need array of array as input
+                mask = cv2.drawContours(mask,[contr],-1,0,-1)
+        # fulfill the inner of contour
+        mask = cv2.drawContours(mask,[contours[biggest_contr_idx]],-1,255,-1)
+        
+        # bgr mask to draw for debug
+        temp = mask.copy()
+        temp = cv2.cvtColor(temp,cv2.COLOR_GRAY2BGR)
+        temp = cv2.drawContours(temp,contours[biggest_contr_idx],-1,(255,0,0),append_pixel*3)
+        temp = cv2.drawContours(temp,contours[biggest_contr_idx],-1,(255,255,0),append_pixel)
+        # im_show("temp",temp)
+
+        # append target around its contour
+        mask_top = cv2.drawContours(mask.copy(),contours[biggest_contr_idx],-1,255,append_pixel)
+        mask_mid = cv2.drawContours(mask.copy(),contours[biggest_contr_idx],-1,255,append_pixel*2)
+        mask_bottom = cv2.drawContours(mask.copy(),contours[biggest_contr_idx],-1,255,append_pixel*4)
+        # let bottom part append(for shadow) more than top part of mask
+        mask[:y0 + bbox_h_offset,:] = mask_top[:y0 + bbox_h_offset,:]
+        mask[(y0 + bbox_h_offset):(y0 + bbox_h_offset * 2),:] = mask_mid[(y0 + bbox_h_offset):(y0 + bbox_h_offset * 2),:]
+        mask[(y0 + bbox_h_offset * 2):,:] = mask_bottom[(y0 + bbox_h_offset * 2):,:]
+
+        # full fill the final mask
+        contours , hierarchy = cv2.findContours(mask,cv2.RETR_EXTERNAL ,cv2.CHAIN_APPROX_NONE)
+        mask = cv2.drawContours(mask,contours,-1,255,-1)
+
+        # temp2 = cv2.cvtColor(mask_cont,cv2.COLOR_GRAY2BGR)
+        # temp3 = cv2.cvtColor(mask_dila,cv2.COLOR_GRAY2BGR)
+        # cv2.rectangle(temp2,())
+        # im_show("mask",[temp,mask_cont,mask_dila,mask])
+        
         # save result mask and cutted image by this mask
         save_path = os.path.join(image_dir,cut_img_name)
         img_obj.save_mask_cut(save_path,mask)
@@ -171,7 +209,7 @@ def inpainting(img_obj,img_name = "image.png",cut_img_name = "cut.png",mask_img_
 # button function
 ###########################################
 
-def inpainting_fun(idx = 0):
+def inpainting_fun(idx = None):
     global out_vid_low
     # the file name of used image
     image_name = "image_{}.png".format(idx)
@@ -232,8 +270,8 @@ def video_inpainting():
     i = 0
     while(current_msec <= stop_msec):
         # for debugging stop the iteration after few frame
-        # if (i >= 5 ):
-        #     break
+        if (i >= 4 ):
+            break
         if(i != 0):
             print("Video progress rate : ",current_msec," / ",stop_msec)
             vid.set(cv2.CAP_PROP_POS_FRAMES,begin_frame + i * sample_frame)
