@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import types
 import atexit
-import time
+import copy
 
 # model
 ###########################################
@@ -19,7 +19,7 @@ video_dir = "video/"
 yoloV4_model_path = os.path.join(".","model","yolov4_deepsort")
 inpainting_model_path = os.path.join(".","model","generative_inpainting")
 mask_RCNN_path = os.path.join(".","model","Mask_RCNN_tf2")
-video_path = os.path.join(video_dir,"test2.mp4")
+video_path = os.path.join(video_dir,"test.mp4")
 output_video_path = os.path.join(video_dir,"result.avi")
 output_video_low_path = os.path.join(video_dir,"result_low.avi")
 ### YOLOv4 + deep sort
@@ -55,7 +55,7 @@ out_vid = cv2.VideoWriter(output_video_path, codec, fps, (width, height))
 out_vid_low = None
 
 # video setting
-begin_frame = 129
+begin_frame = 3
 stop_msec = 2000
 sample_msec = 100
 sample_frame = 10
@@ -110,6 +110,7 @@ def mask_RCNN(img_name = "image.png",output_mask_name = "RCNN_mask.png"):
 # global variable use_RCNN means whether using RCNN mask or bounding box (default is true)
 def prepare_inpainting_img(img_obj,img_name = "image.png",cut_img_name = "cut.png",mask_img_name = "mask.png"):
     global use_RCNN
+    print("Inpainting related image saved as : ",img_name,cut_img_name,mask_img_name)
     if use_RCNN:
         # save full frame image for RCNN input
         save_path = os.path.join(image_dir,img_name)
@@ -118,8 +119,24 @@ def prepare_inpainting_img(img_obj,img_name = "image.png",cut_img_name = "cut.pn
         RCNN_mask = mask_RCNN(img_name,mask_img_name)
         bbox_mask = img_obj.masking_boundingBox()
         mask = cv2.bitwise_and(RCNN_mask,RCNN_mask,mask=bbox_mask)
-        # dilate the mask to fit the person
+        # dilate once to concate target near by mask to single big mask
         kernel = np.ones((3,3), np.uint8)
+        mask = cv2.dilate(mask, kernel, iterations = 1)
+        contours , hierarchy = cv2.findContours(mask,cv2.RETR_EXTERNAL ,cv2.CHAIN_APPROX_SIMPLE)
+        print("num of contours : ",len(contours))
+        # find the biggest mask
+        max_area = 0
+        bigest_contr_idx = -1
+        for i,contr in enumerate(contours):
+            area = cv2.contourArea(contr)
+            print("contour area {}: ".format(i),area)
+            if area > max_area:
+                max_area = area
+                bigest_contr_idx = i
+        # remove other contour only remain target contour
+        contours.pop(bigest_contr_idx)
+        mask = cv2.drawContours(mask,contours,-1,0,-1)
+        # dilate the mask to fit the person
         mask = cv2.dilate(mask, kernel, iterations = 10)
         # save result mask and cutted image by this mask
         save_path = os.path.join(image_dir,cut_img_name)
@@ -213,11 +230,10 @@ def video_inpainting():
     global begin_frame
     current_msec = 0
     i = 0
-    # for i < 2:
     while(current_msec <= stop_msec):
         # for debugging stop the iteration after few frame
-        if (i >= 5 ):
-            break
+        # if (i >= 5 ):
+        #     break
         if(i != 0):
             print("Video progress rate : ",current_msec," / ",stop_msec)
             vid.set(cv2.CAP_PROP_POS_FRAMES,begin_frame + i * sample_frame)
