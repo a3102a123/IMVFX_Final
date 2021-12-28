@@ -137,7 +137,7 @@ class Image():
         x0,y0,x1,y1 = sys.maxsize,sys.maxsize,-1,-1
         for bbox in self.boundingBox_list:
             b_x0,b_y0,b_x1,b_y1 = bbox.get_range()
-            x0,y0,x1,y1 = min(b_x0,x0),min(b_y0,y0),max(b_x1,x1),max(b_y1,y1)
+            x0,y0,x1,y1 = int(min(b_x0,x0)),int(min(b_y0,y0)),int(max(b_x1,x1)),int(max(b_y1,y1))
         return x0,y0,x1,y1
 
     # change the content in bounding box to img
@@ -152,6 +152,7 @@ class Image():
             begin_h = y0 - img_y0
             width = x1 - x0
             height = y1 - y0
+            print("Set bounging box Begin : ",begin_w,begin_h,", origin position : ",x0,y0,", width,height",width,height)
             Img[y0:y0 + height,x0:x0 + width] = img[begin_h:begin_h + height,begin_w:begin_w + width]
             self.set_image(Img)
         return Img
