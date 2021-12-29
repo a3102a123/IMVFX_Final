@@ -141,19 +141,29 @@ class Image():
         return x0,y0,x1,y1
 
     # change the content in bounding box to img
-    # (the size of img is the bigger bounding box combined with all bounding box in list)
-    def set_boundingBox_image(self,img):
+    # (without mask : the size of img is the bigger bounding box combined with all bounding box in list)
+    # (with mask : the img size is as same as original image)
+    def set_boundingBox_image(self,img,mask = None):
         Img = copy.deepcopy(self.ori_image)
-        # find the bounding image beginning position in origin image
-        img_x0,img_y0,img_x1,img_y1 = self.get_combined_boundingBox()
-        for bbox in self.boundingBox_list:
-            x0,y0,x1,y1 = bbox.get_range()
-            begin_w = x0 - img_x0
-            begin_h = y0 - img_y0
-            width = x1 - x0
-            height = y1 - y0
-            print("Set bounging box Begin : ",begin_w,begin_h,", origin position : ",x0,y0,", width,height",width,height)
-            Img[y0:y0 + height,x0:x0 + width] = img[begin_h:begin_h + height,begin_w:begin_w + width]
+        if mask is None:
+            # find the bounding image beginning position in origin image
+            img_x0,img_y0,img_x1,img_y1 = self.get_combined_boundingBox()
+            for bbox in self.boundingBox_list:
+                x0,y0,x1,y1 = bbox.get_range()
+                begin_w = x0 - img_x0
+                begin_h = y0 - img_y0
+                width = x1 - x0
+                height = y1 - y0
+                print("Set bounging box Begin : ",begin_w,begin_h,", origin position : ",x0,y0,", width,height",width,height)
+                Img[y0:y0 + height,x0:x0 + width] = img[begin_h:begin_h + height,begin_w:begin_w + width]
+                self.set_image(Img)
+        else:
+            # make sure mask is binary value rather than continuous value
+            ret, mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
+            img = cv2.bitwise_and(img,img,mask=mask)
+            inv_mask = cv2.bitwise_not(mask)
+            img_ori = cv2.bitwise_and(self.ori_image,self.ori_image,mask = inv_mask)
+            Img = cv2.add(img_ori,img)
             self.set_image(Img)
         return Img
     
@@ -201,6 +211,8 @@ class Image():
 
     # save the image cutted by mask
     def save_mask_cut(self,path,mask):
+        # make sure mask is binary value rather than continuous value
+        ret, mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
         white = self.get_white_img()
         white = cv2.bitwise_and(white,white,mask=mask)
         inv_mask = cv2.bitwise_not(mask)

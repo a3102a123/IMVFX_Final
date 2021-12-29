@@ -237,9 +237,17 @@ def inpainting_fun(idx = None):
         out_vid_low = cv2.VideoWriter(output_video_low_path, codec, fps, (r_w , r_h))
 
     # combine the inpainting result & origin image
-    edit_result = result_img_obj.get_boundingBox_image()
+    # prepare mask to combine two image
+    mask_path = os.path.join(mask_dir,mask_img_name)
+    mask_obj = Image(mask_path)
+    mask_obj = mask_obj.get_resize_Image(w,h)
+    mask = cv2.cvtColor(mask_obj.ori_image,cv2.COLOR_BGR2GRAY)
+    # using bounding box to combine two image (the size of this is smaller than original image)
+    # edit_result = result_img_obj.get_boundingBox_image()
+    # using mask to combine two image (the size of this is as same as original image)
+    edit_result = result_img_obj.ori_image
     GUI.result.set_image(GUI.frame)
-    GUI.result.set_boundingBox_image(edit_result)
+    GUI.result.set_boundingBox_image(edit_result,mask=mask)
     GUI.result.save(save_path)
     GUI.result.draw_boundingBox((0,0,255))
     GUI.display()
